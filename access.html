@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>The Coffee Mugg</title>
+    <!-- Links the manifest file, which is crucial for PWA installation -->
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* Color variables and base styles */
+        :root {
+            --base: #150c01;
+            --para: #f8f8f2;
+            --gold: #facc15;
+            --darker-base: #121215;
+            --accent-gray: #4a4a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Georgia', serif;
+            background-color: var(--base);
+            color: var(--para);
+            scroll-behavior: smooth;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        body {
+            padding-bottom: 70px; /* Space for the fixed bottom nav */
+        }
+
+        /* The new, PWA-like bottom navigation */
+        .pwa-bottom-nav {
+            background-color: var(--darker-base);
+            color: var(--gold);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .pwa-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #ccc;
+            transition: color 0.2s ease;
+        }
+
+        .pwa-bottom-nav .nav-item.active {
+            color: var(--gold);
+        }
+        
+        .pwa-bottom-nav .icon {
+            font-size: 2.2rem;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .pwa-bottom-nav .icon:active {
+            transform: scale(0.9);
+        }
+
+        .pwa-bottom-nav .cart-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: #e32929;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 50%;
+            padding: 2px 6px;
+            transform: translate(50%, -50%);
+            display: none; /* Hidden by default */
+        }
+
+        /* Main Content Sections */
+        section {
+            padding: 40px 0; /* Full width content with no horizontal padding */
+            text-align: center;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: var(--gold);
+        }
+        
+        /* Hero Section */
+        .hero-section {
+            height: 100vh;
+            background: url('https://res.cloudinary.com/dzhvdoifb/image/upload/v1756575267/image_2025-08-30_123425434_i3u9f6.png') no-repeat center center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+        
+        .hero-content {
+            z-index: 10;
+            text-align: center;
+            max-width: 600px;
+            padding: 0 20px;
+        }
+        
+        .hero-content h1 {
+            font-size: 2.5rem;
+            color: var(--gold);
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+        }
+        
+        .hero-content p {
+            font-size: 1rem;
+            margin-bottom: 30px;
+        }
+        
+        .hero-button {
+            padding: 12px 24px;
+            background: var(--gold);
+            color: var(--base);
+            border-radius: 50px;
+            font-weight: bold;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Horizontal Carousel Styles */
+        .vibe-feed {
+            display: flex;
+            overflow-x: auto; /* Enables horizontal scrolling */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            padding: 0 20px; /* Add horizontal padding to the feed */
+            scroll-snap-type: x mandatory; /* Snap to cards as they scroll */
+        }
+
+        .vibe-feed::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for a cleaner look */
+        }
+
+        .vibe-card {
+            flex: 0 0 80%; /* Each card takes up 80% of the viewport width */
+            margin-right: 20px; /* Space between cards */
+            position: relative;
+            height: 250px;
+            overflow: hidden;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            scroll-snap-align: start; /* Align the start of the card with the snap point */
+        }
+
+        .vibe-card:last-child {
+            margin-right: 0; /* No margin on the last item */
+        }
+
+        .vibe-card:active {
+            transform: scale(0.98);
+        }
+
+        .vibe-card img {
+            width: 100%;
+            height: 250%;
+            object-fit: cover;
+            display: block;
+            filter: brightness(0.8);
+            transition: filter 0.3s ease;
+        }
+
+        .vibe-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px 20px;
+            line-height: 1.3;
+            color: var(--para);
+        }
+
+        .vibe-info h3 {
+            margin-bottom: 5px;
+            font-size: 1.2rem;
+            color: var(--gold);
+        }
+
+        .vibe-info p {
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+        
+        /* Single-column layout for About & Contact */
+        .full-width-section-content {
+            padding: 0 20px;
+        }
+
+        .two-column > div {
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .contact-info {
+            text-align: left;
+            padding: 20px;
+            background: #1e1e23;
+            border-radius: 15px;
+        }
+
+        .contact-info h3 {
+            color: var(--gold);
+            margin-bottom: 10px;
+        }
+
+        iframe {
+            width: 100%;
+            height: 300px;
+            border: 0;
+            border-radius: 15px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px 80px;
+            background: var(--darker-base);
+            color: #999;
+        }
+        
+        /* Simple Sparkles */
+        .sparkle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: var(--gold);
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: sparkle 3s infinite ease-in-out;
+        }
+
+        @keyframes sparkle {
+            0% { transform: translateY(0) scale(1); opacity: 0.7; }
+            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(0) scale(1); opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <!-- The new, PWA-like bottom navigation -->
+   <nav class="pwa-bottom-nav">
+        <a class="nav-item" href="coffeeMuggPWA.html">
+            <div class="icon">🏠</div>
+            <span>Home</span>
+        </a>
+        <a class="nav-item active" href="menuPWA.html">
+            <div class="icon">☕</div>
+            <span>Menu</span>
+        </a>
+        <a class="nav-item" href="#">
+            <div class="icon">✨</div>
+            <span>Rewards</span>
+        </a>
+        <a class="nav-item" href="#">
+            <div class="icon">🛍️</div>
+            <span>Order</span>
+        </a>
+        <a class="nav-item" href="#">
+            <div class="icon">👤</div>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>Where Muggles Meet Magic</h1>
+            <p>Serving spells by the cupful since 2018</p>
+            <a href="#" class="hero-button">Order Now</a>
+        </div>
+    </section>
+
+    <section id="vibes">
+        <h2 class="section-title">Magical Moods & Brews</h2>
+        <!-- Converted carousel to a mobile-friendly vertical feed -->
+        <div class="vibe-feed">
+            <a href="#" class="vibe-card">
+                <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756577108/image_2025-08-30_130504161_ql17p6.png" alt="Cozy corner">
+                <div class="vibe-info">
+                    <h3>Cozy Corner</h3>
+                    <p>Warmth to melt any cold winter night.</p>
+                </div>
+            </a>
+            <a href="#" class="vibe-card">
+                <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756576791/image_2025-08-30_125824947_kfzcii.png" alt="Magical Bookshelves">
+                <div class="vibe-info">
+                    <h3>Magical Bookshelves</h3>
+                    <p>Ancient tomes whisper secrets.</p>
+                </div>
+            </a>
+            <a href="#" class="vibe-card">
+                <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756582698/image_2025-08-30_143814164_olgcej.png" alt="Pop-up Event">
+                <div class="vibe-info">
+                    <h3>Pop-Up Permanent Jewelry</h3>
+                    <p>J Bloom Permanent Jewelry is popping up at The Coffee Mugg on August 30th from 11AM–3PM.</p>
+                </div>
+            </a>
+            <a href="#" class="vibe-card">
+                <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756582952/image_2025-08-30_144038245_sx1pw8.png" alt="Community Gratitude">
+                <div class="vibe-info">
+                    <h3>Community Gratitude</h3>
+                    <p>Your support made magic happen, putting a new bike and pure joy on wheels.</p>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section id="about">
+        <h2 class="section-title">A Place of Wonder</h2>
+        <div class="full-width-section-content">
+            <div class="two-column">
+                <div>
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756576611/image_2025-08-30_125648977_weyyvs.png" alt="About The Coffee Mugg" style="width: 100%; border-radius: 15px; margin-bottom: 20px;">
+                    <p style="line-height: 1.6;">
+                        From my little hidden coffee shop above a chocolate factory... to finding a little suite on Morgan... to building a little home away from home for fellow hogwarts alumni’s. Becoming a “safe house” for young runaways... where all feel accepted... Thank you to every one who has brought in gifts... I am grateful for you all.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <h2 class="section-title">Contact & Location</h2>
+        <div class="full-width-section-content">
+            <div class="two-column">
+                <div class="contact-info">
+                    <h3>Visit Our Magical Spot</h3>
+                    <p style="margin-bottom: 10px;">1112 Morgan Ave, Corpus Christi, TX 78404</p>
+                    <p>
+                        <b>Hours of Operation:</b> <br>
+                        MON-THUR: 6:30a - 3:00p <br>
+                        FRI-SUN: 8:00a - 7:00p
+                    </p>
+                </div>
+                <div>
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3530.0037313203757!2d-97.40224339999999!3d27.778859199999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8668f52ae767ebe5%3A0x62b299b1e894e45b!2sThe%20Coffee%20Mugg!5e0!3m2!1sen!2sus!4v1753580933383!5m2!1sen!2sus" title="Google Maps Location" loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        © 2025 The Coffee Mugg · Mischief Managed by AyyJayyMcFae
+    </footer>
+
+    <script>
+        // Register the service worker to enable PWA features
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+            });
+        }
+        
+        // Add sparkle effect
+        const numSparkles = 25;
+        for (let i = 0; i < numSparkles; i++) {
+            const s = document.createElement('div');
+            s.classList.add('sparkle');
+            s.style.left = Math.random() * 100 + 'vw';
+            s.style.top = Math.random() * 100 + 'vh';
+            s.style.animationDelay = (Math.random() * 3) + 's';
+            document.body.appendChild(s);
+        }
+    </script>
+
+</body>
+</html>
