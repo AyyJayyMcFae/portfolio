@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>The Coffee Mugg Menu</title>
+    <!-- Links the manifest file, which is crucial for PWA installation -->
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* Color variables and base styles */
+        :root {
+            --base: #150c01;
+            --para: #f8f8f2;
+            --gold: #facc15;
+            --darker-base: #121215;
+            --accent-gray: #4a4a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Georgia', serif;
+            background-color: var(--base);
+            color: var(--para);
+            scroll-behavior: smooth;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        body {
+            /* Space for the fixed bottom nav */
+            padding-bottom: 70px;
+        }
+        
+        /* The new, PWA-like bottom navigation */
+        .pwa-bottom-nav {
+            background-color: var(--darker-base);
+            color: var(--gold);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .pwa-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #ccc;
+            transition: color 0.2s ease;
+        }
+
+        .pwa-bottom-nav .nav-item.active {
+            color: var(--gold);
+        }
+        
+        .pwa-bottom-nav .icon {
+            font-size: 2.2rem;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .pwa-bottom-nav .icon:active {
+            transform: scale(0.9);
+        }
+
+        .pwa-bottom-nav .cart-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: #e32929;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 50%;
+            padding: 2px 6px;
+            transform: translate(50%, -50%);
+            display: none; /* Hidden by default */
+        }
+
+        /* Section Styles */
+        section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            color: var(--gold);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px 80px;
+            background: #121215;
+            color: #999;
+        }
+        
+        /* Simple Sparkles */
+        .sparkle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: var(--gold);
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: sparkle 3s infinite ease-in-out;
+        }
+
+        @keyframes sparkle {
+            0% { transform: translateY(0) scale(1); opacity: 0.7; }
+            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(0) scale(1); opacity: 0.7; }
+        }
+
+        /* Menu-specific styles */
+        .menu-section {
+            margin-bottom: 60px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .menu-item {
+            position: relative;
+            height: 350px;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .item-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            filter: brightness(0.6);
+            transition: filter 0.3s ease;
+        }
+
+        .menu-item:hover .item-image {
+            filter: blur(3px) brightness(0.5);
+        }
+
+        .item-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 2;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .menu-item:hover .item-content {
+            background: rgba(0, 0, 0, 0.6);
+            transform: translateY(-5px);
+        }
+        
+        .item-name {
+            font-size: 1.4rem;
+            color: var(--gold);
+            margin-bottom: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .item-description {
+            font-size: 0.9rem;
+            color: #bbb;
+            margin-bottom: 15px;
+            transition: color 0.3s ease;
+        }
+        
+        .item-price-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--gold);
+            color: var(--base);
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 1rem;
+            z-index: 3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .pagination-button {
+            background: none;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .pagination-button:hover:not(:disabled) {
+            background: var(--gold);
+            color: var(--base);
+        }
+
+        .pagination-button:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        /* Color Picker */
+        .color-picker {
+            position: fixed;
+            bottom: 30px;
+            right: 90px;
+            width: 44px;
+            height: 44px;
+            z-index: 9999;
+        }
+
+        .toggle-button {
+            width: 44px;
+            height: 44px;
+            opacity: 40%;
+            background: var(--gold);
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: var(--para);
+            user-select: none;
+            position: relative;
+            z-index: 10;
+            transition: background 0.3s;
+        }
+
+        .toggle-button:hover {
+            background: #caa615;
+        }
+
+        /* Base styles for swatches */
+        .swatch {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #3b3c3e;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            cursor: pointer;
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            filter: brightness(5);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        /* Positions for radial */
+        .color-picker.open .swatch:nth-child(2) {
+            transform: translate(-70px, 0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .color-picker.open .swatch:nth-child(3) {
+            transform: translate(-50px, -50px);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .color-picker.open .swatch:nth-child(4) {
+            transform: translate(0, -70px);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .color-picker.open .swatch:nth-child(5) {
+            transform: translate(50px, -50px);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .color-picker.open .swatch:nth-child(6) {
+            transform: translate(70px, 0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .color-picker.open .swatch:nth-child(7) {
+            transform: translate(50px, 50px);
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- The new, PWA-like bottom navigation -->
+    <nav class="pwa-bottom-nav">
+        <a class="nav-item" href="coffeeMuggPWA.html">
+            <div class="icon">🏠</div>
+            <span>Home</span>
+        </a>
+        <a class="nav-item active" href="menuPWA.html">
+            <div class="icon">☕</div>
+            <span>Menu</span>
+        </a>
+        <a class="nav-item" href="#">
+            <div class="icon">✨</div>
+            <span>Rewards</span>
+        </a>
+        <a class="nav-item" href="#">
+            <div class="icon">🛍️</div>
+            <span>Order</span>
+        </a>
+        <a class="nav-item" href="#">
+            <div class="icon">👤</div>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <section id="menu">
+        <h2 class="section-title">The Coffee Mugg Menu</h2>
+        <div class="menu-section">
+            <h3 style="color: var(--gold); font-size: 1.8rem; margin-bottom: 20px;">Limited Time Items</h3>
+            <div class="menu-grid">
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756580263/image_2025-08-30_135739935_yfd3py.png" alt="Unicorn Blood" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Unicorn Blood</div>
+                        <div class="item-description">A shimmery, magical, and sweet beverage that sparkles with every sip.</div>
+                    </div>
+                    <div class="item-price-badge">$4.00</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756580549/image_2025-08-30_140226048_z9wfpc.png" alt="Pumpkin Spice Bread" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Pumpkin Spice Bread</div>
+                        <div class="item-description">Moist, flavorful pumpkin bread swirled with warm autumn spices.</div>
+                    </div>
+                    <div class="item-price-badge">$4.00</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756580721/image_2025-08-30_140517581_hlnhor.png" alt="The Mandrake" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">The Mandrake</div>
+                        <div class="item-description">A rich and nutty spiced latte, perfect for a calming effect.</div>
+                    </div>
+                    <div class="item-price-badge">$6.00</div>
+                </div>
+            </div>
+        </div>
+        <div class="menu-section">
+            <h3 style="color: var(--gold); font-size: 1.8rem; margin-bottom: 20px;">Coffee & Espresso</h3>
+            <div class="menu-grid" id="coffee-grid">
+                <!-- These are the items to be paginated -->
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756578217/image_2025-08-30_132335019_owxhac.png" alt="The Wizard's Brew" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Buckbeak Latte</div>
+                        <div class="item-description">A creamy white chocolate latte with notes of pumpkin spice and cinnamon.</div>
+                    </div>
+                    <div class="item-price-badge">$4.50</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756578182/image_2025-08-30_132236819_zslfmq.png" alt="Demon(tor) Remedy Latte" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Demon(tor) Remedy Latte</div>
+                        <div class="item-description">A classic dark roast espresso shot to boost your spirits.</div>
+                    </div>
+                    <div class="item-price-badge">$3.00</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756579615/image_2025-08-30_134651955_kkbdbi.png" alt="Weaselbee latte" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Weaselbee latte</div>
+                        <div class="item-description">A warm, inviting blend of caramel and vanilla with espresso.</div>
+                    </div>
+                    <div class="item-price-badge">$5.50</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756580893/image_2025-08-30_140810044_c4zh1e.png" alt="The Horcrux" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">The Horcrux</div>
+                        <div class="item-description">A dangerously delicious, dark and smoky medium roast.</div>
+                    </div>
+                    <div class="item-price-badge">$3.50</div>
+                </div>
+                <!-- Additional coffee items for pagination demonstration -->
+                <div class="menu-item">
+                    <img src="https://placehold.co/500x350/111111/facc15?text=Slytherin+Mocha" alt="Slytherin Mocha" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Slytherin Mocha</div>
+                        <div class="item-description">A rich, dark chocolate and mint mocha, cunningly delicious.</div>
+                    </div>
+                    <div class="item-price-badge">$5.00</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://placehold.co/500x350/111111/facc15?text=Dumbledore's+Delight" alt="Dumbledore's Delight" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Dumbledore's Delight</div>
+                        <div class="item-description">A sweet, spiced chai latte with a hint of cinnamon and wisdom.</div>
+                    </div>
+                    <div class="item-price-badge">$4.75</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://placehold.co/500x350/111111/facc15?text=Grind+and+Gryffindor" alt="Grind and Gryffindor" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Grind and Gryffindor</div>
+                        <div class="item-description">A bold, courageous blend with robust, chocolatey notes.</div>
+                    </div>
+                    <div class="item-price-badge">$4.00</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://placehold.co/500x350/111111/facc15?text=Ravenclaw+Roast" alt="Ravenclaw Roast" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Ravenclaw Roast</div>
+                        <div class="item-description">A light roast with subtle fruit notes for the wise and witty.</div>
+                    </div>
+                    <div class="item-price-badge">$4.25</div>
+                </div>
+            </div>
+            <!-- Pagination Controls -->
+            <div class="pagination-controls">
+                <button id="prevPage" class="pagination-button" disabled>Previous</button>
+                <span id="pageInfo">Page 1 of 2</span>
+                <button id="nextPage" class="pagination-button">Next</button>
+            </div>
+        </div>
+        
+        <div class="menu-section">
+            <h3 style="color: var(--gold); font-size: 1.8rem; margin-bottom: 20px;">Food & Pastries</h3>
+            <div class="menu-grid">
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756576583/image_2025-08-30_125614237_huebng.png" alt="Sorting Hat Cupcake" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Sorting Hat Cupcake</div>
+                        <div class="item-description">A sweet chocolate cupcake with a swirled frosting hat on top.</div>
+                    </div>
+                    <div class="item-price-badge">$4.00</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756579400/image_2025-08-30_134239435_s459gn.png" alt="Golden Snitch Cake Pop" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Golden Snitch Cake Pop</div>
+                        <div class="item-description">A shimmering, gold cake pop with feathered wings.</div>
+                    </div>
+                    <div class="item-price-badge">$5.00</div>
+                </div>
+                <div class="menu-item">
+                    <img src="https://res.cloudinary.com/dzhvdoifb/image/upload/v1756579771/image_2025-08-30_134928337_tae1xy.png" alt="Chocolate Coffee Bread" class="item-image">
+                    <div class="item-content">
+                        <div class="item-name">Chocolate Coffee Bread</div>
+                        <div class="item-description">A rich, moist loaf of bread infused with chocolate and coffee.</div>
+                    </div>
+                    <div class="item-price-badge">$4.50</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="color-picker">
+        <div id="previewSwatch" class="swatch" style="background:#150c01;"></div>
+        <div class="swatch" data-color="#150c01" style="background:#1d1d1d;"></div>
+        <div class="swatch" data-color="#230000" style="background:#230000;"></div>
+        <div class="swatch" data-color="#041d0e" style="background:#041d0e;"></div>
+        <div class="swatch" data-color="#05072a" style="background:#05072a;"></div>
+        <div class="swatch" data-color="#181200" style="background:#281e00;"></div>
+        <div class="toggle-button"></div>
+    </div>
+
+    <footer>
+        &copy; 2025 The Coffee Mugg · Mischief Managed by <a href="index.html" style="color: #3b3c3e;">AyyJayyMcFae</a>
+    </footer>
+
+    <script>
+        // Register the service worker to enable PWA features
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+            });
+        }
+        
+        const root = document.documentElement;
+        const colorPicker = document.querySelector('.color-picker');
+        const toggleButton = document.querySelector('.toggle-button');
+        
+        // Toggle for radial color picker
+        toggleButton.addEventListener('click', () => {
+            colorPicker.classList.toggle('open');
+        });
+
+        // Handle color swatch clicks
+        document.querySelectorAll('.swatch[data-color]').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                const color = swatch.getAttribute('data-color');
+                root.style.setProperty('--base', color);
+                localStorage.setItem('backgroundMode', color);
+                colorPicker.classList.remove('open');
+            });
+        });
+
+        // Load saved color on page load
+        const savedColor = localStorage.getItem('backgroundMode');
+        if (savedColor) {
+            root.style.setProperty('--base', savedColor);
+        }
+
+        // Add sparkle effect
+        const numSparkles = 25;
+        for (let i = 0; i < numSparkles; i++) {
+            const s = document.createElement('div');
+            s.classList.add('sparkle');
+            s.style.left = Math.random() * 100 + 'vw';
+            s.style.top = Math.random() * 100 + 'vh';
+            s.style.animationDelay = (Math.random() * 3) + 's';
+            document.body.appendChild(s);
+        }
+        
+        // --- Pagination Logic for Coffee & Espresso Section ---
+
+        const coffeeGrid = document.getElementById('coffee-grid');
+        const coffeeItems = Array.from(coffeeGrid.querySelectorAll('.menu-item'));
+        const prevButton = document.getElementById('prevPage');
+        const nextButton = document.getElementById('nextPage');
+        const pageInfo = document.getElementById('pageInfo');
+
+        const itemsPerPage = 4;
+        let currentPage = 1;
+        const totalPages = Math.ceil(coffeeItems.length / itemsPerPage);
+
+        // Function to display the items for the current page
+        function showPage(page) {
+            // Calculate start and end indices
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+
+            // Hide all items
+            coffeeItems.forEach(item => {
+                item.style.display = 'none';
+            });
+
+            // Show items for the current page
+            for (let i = startIndex; i < endIndex && i < coffeeItems.length; i++) {
+                coffeeItems[i].style.display = 'block';
+            }
+
+            // Update button states and page info
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage === totalPages;
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        }
+
+        // Event listeners for pagination buttons
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                showPage(currentPage);
+            }
+        });
+
+        // Initial load
+        showPage(currentPage);
+
+    </script>
+</body>
+</html>
