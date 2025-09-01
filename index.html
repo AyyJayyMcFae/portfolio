@@ -36,15 +36,15 @@
             text-decoration: none;
         }
 
-       body {
-            padding-bottom: calc(70px + env(safe-area-inset-bottom));
+        body {
+            padding-bottom:70px;
         }
 
         /* The new, PWA-like bottom navigation */
-       .pwa-bottom-nav {
+        .pwa-bottom-nav {
             background-color: var(--darker-base);
             color: var(--gold);
-            padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+            padding: 10px 20px 40px;
             display: flex;
             align-items: center;
             justify-content: space-around;
@@ -52,7 +52,6 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: calc(70px + env(safe-area-inset-bottom)); /* <-- update this line */
             z-index: 1000;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
         }
