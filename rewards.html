@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>The Coffee Mugg Rewards</title>
+    <!-- Links the manifest file, which is crucial for PWA installation -->
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* Color variables and base styles */
+        :root {
+            --base: #150c01;
+            --para: #f8f8f2;
+            --gold: #facc15;
+            --darker-base: #121215;
+            --accent-gray: #4a4a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Georgia', serif;
+            background-color: var(--base);
+            color: var(--para);
+            scroll-behavior: smooth;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        body {
+            padding-bottom: 70px; /* Space for the fixed bottom nav */
+        }
+
+        /* The new, PWA-like bottom navigation */
+        .pwa-bottom-nav {
+            background-color: var(--darker-base);
+            color: var(--gold);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .pwa-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #ccc;
+            transition: color 0.2s ease;
+        }
+
+        .pwa-bottom-nav .nav-item.active {
+            color: var(--gold);
+        }
+        
+        .pwa-bottom-nav .icon {
+            font-size: 2.2rem;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .pwa-bottom-nav .icon:active {
+            transform: scale(0.9);
+        }
+
+        .pwa-bottom-nav .cart-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: #e32929;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 50%;
+            padding: 2px 6px;
+            transform: translate(50%, -50%);
+            display: none; /* Hidden by default */
+        }
+
+        /* Rewards Page Specific Styles */
+        main {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+            footer {
+            text-align: center;
+            padding: 20px 20px 20px;
+            background: var(--base);
+            color: #999;
+        }
+
+        .rewards-card {
+            background-color: #1a1a1e;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+            text-align: center;
+            scroll-behavior: hidden;
+        }
+
+        .rewards-card h2 {
+            font-size: 2rem;
+            color: var(--gold);
+            margin-bottom: 10px;
+        }
+
+        .points-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--gold);
+            margin-bottom: 20px;
+        }
+
+        .progress-bar-container {
+            background-color: var(--accent-gray);
+            height: 15px;
+            border-radius: 50px;
+            overflow: hidden;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--gold);
+            transition: width 0.5s ease-in-out;
+            border-radius: 50px;
+        }
+
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 15px;
+            font-size: 0.8rem;
+            color: var(--base);
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .redeem-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .reward-item {
+            background-color: #1e1e23;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        
+        .reward-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .reward-item h3 {
+            font-size: 1.2rem;
+            color: var(--gold);
+            margin-bottom: 5px;
+        }
+
+        .reward-item p {
+            font-size: 0.9rem;
+            color: #bbb;
+            margin-bottom: 15px;
+        }
+
+        .cost-tag {
+            background-color: var(--gold);
+            color: var(--base);
+            font-weight: bold;
+            padding: 5px 15px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
+        .redeem-button {
+            background-color: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 8px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .redeem-button:hover:not(:disabled) {
+            background-color: var(--gold);
+            color: var(--base);
+        }
+
+        .redeem-button:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        /* Simple Sparkles */
+        .sparkle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: var(--gold);
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: sparkle 3s infinite ease-in-out;
+        }
+
+        @keyframes sparkle {
+            0% { transform: translateY(0) scale(1); opacity: 0.7; }
+            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(0) scale(1); opacity: 0.7; }
+        }
+
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 26, 30, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            z-index: 1001;
+            display: none;
+            text-align: center;
+            max-width: 80%;
+        }
+    </style>
+</head>
+<body>
+
+   <!-- The new, PWA-like bottom navigation -->
+    <nav class="pwa-bottom-nav">
+        <!-- Themed icons for a magical setting -->
+        <a class="nav-item" href="index.html">
+            <div class="icon">🏰</div>
+            <span>Home</span>
+        </a>
+        <a class="nav-item" href="menu.html">
+            <div class="icon">📜</div>
+            <span>Menu</span>
+        </a>
+        <a class="nav-item" href="rewards.html">
+            <div class="icon">🏆</div>
+            <span>Rewards</span>
+        </a>
+        <a class="nav-item active" href="menu.html">
+            <div class="icon">🛒<span id="cartBadge" class="cart-badge">0</span></div>
+            <span>Order</span>
+        </a>
+        <a class="nav-item" href="#">
+            <div class="icon">🧙‍♂️</div>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <main>
+        <!-- User Points and Progress Card -->
+        <div class="rewards-card">
+            <h2 id="userName">Magic-in-Training</h2>
+            <p>Your Current Points</p>
+            <div class="points-display" id="userPoints">0</div>
+            
+            <!-- Progress to next tier -->
+            <p id="progressLabel">Earn more points to become a Sorcerer!</p>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width:0%;"></div>
+                <span class="progress-text" id="progressText">0 / 500 points</span>
+            </div>
+            
+            <button id="earnPointsBtn" class="redeem-button" style="margin-top: 20px; font-weight: bold;">
+                <span class="icon" style="font-size: 1.2rem;">💰</span> Earn 10 Points
+            </button>
+        </div>
+
+        <!-- How it Works Section -->
+        <div class="rewards-card" style="text-align: left;">
+            <h2>How it Works</h2>
+            <p style="color: #bbb; line-height: 1.6;">
+                As a member of The Coffee Mugg loyalty program, you earn **10 points** for every magical purchase. These points get you closer to the next reward tier, and they can also be redeemed for exclusive items and drinks.
+                <br><br>
+                **Tiers:**
+                <ul>
+                    <li style="list-style-type: '🧙‍♀️ '; margin-left: 1.5rem;">**Magic-in-Training:** 0 - 499 points</li>
+                    <li style="list-style-type: '🔮 '; margin-left: 1.5rem;">**Sorcerer:** 500 - 999 points (unlocks a free pastry!)</li>
+                    <li style="list-style-type: '✨ '; margin-left: 1.5rem;">**Wizard:** 1000+ points (unlocks a free drink of choice!)</li>
+                </ul>
+            </p>
+        </div>
+
+        <!-- Redeemable Rewards Section -->
+        <div class="rewards-card">
+            <h2>Your Magical Rewards</h2>
+            <p style="color: #bbb; margin-bottom: 20px;">Redeem your points for these exclusive items.</p>
+            <div class="redeem-section">
+                <!-- Reward Item 1 -->
+                <div class="reward-item">
+                    <h3>Free Coffee Drip</h3>
+                    <p class="cost-tag">100 pts</p>
+                    <p>A classic, fresh-brewed coffee to fuel your day.</p>
+                    <button class="redeem-button" data-cost="100">Redeem</button>
+                </div>
+                <!-- Reward Item 2 -->
+                <div class="reward-item">
+                    <h3>A Magical Pastry</h3>
+                    <p class="cost-tag">250 pts</p>
+                    <p>Your choice of a delicious, enchanted pastry.</p>
+                    <button class="redeem-button" data-cost="250">Redeem</button>
+                </div>
+                <!-- Reward Item 3 -->
+                <div class="reward-item">
+                    <h3>Specialty Drink</h3>
+                    <p class="cost-tag">500 pts</p>
+                    <p>Any large specialty drink on the menu.</p>
+                    <button class="redeem-button" data-cost="500">Redeem</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Simple Message Box for user feedback -->
+    <div class="message-box" id="messageBox">
+        <p id="messageText"></p>
+    </div>
+
+    <footer>
+        &copy; 2025 The Coffee Mugg · Mischief Managed by AyyJayyMcFae
+    </footer>
+
+    <script>
+        // Register the service worker to enable PWA features
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+            });
+        }
+        
+        // Add sparkle effect
+        const numSparkles = 25;
+        for (let i = 0; i < numSparkles; i++) {
+            const s = document.createElement('div');
+            s.classList.add('sparkle');
+            s.style.left = Math.random() * 100 + 'vw';
+            s.style.top = Math.random() * 100 + 'vh';
+            s.style.animationDelay = (Math.random() * 3) + 's';
+            document.body.appendChild(s);
+        }
+
+        // --- Rewards Page Logic ---
+
+        const userPointsEl = document.getElementById('userPoints');
+        const progressBarEl = document.getElementById('progressBar');
+        const progressTextEl = document.getElementById('progressText');
+        const earnPointsBtn = document.getElementById('earnPointsBtn');
+        const redeemButtons = document.querySelectorAll('.redeem-button');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const progressLabel = document.getElementById('progressLabel');
+
+        const POINTS_PER_PURCHASE = 10;
+        const TIER_1_POINTS = 500;
+        const TIER_2_POINTS = 1000;
+
+        let userPoints = parseInt(localStorage.getItem('userPoints') || 0, 10);
+        let currentTier = 'Magic-in-Training';
+
+        function showMessage(text) {
+            messageText.textContent = text;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 2000);
+        }
+
+        function updateUI() {
+            userPointsEl.textContent = userPoints;
+            localStorage.setItem('userPoints', userPoints);
+
+            // Determine the next tier and update progress bar
+            let nextTierPoints;
+            let nextTierName;
+            if (userPoints < TIER_1_POINTS) {
+                nextTierPoints = TIER_1_POINTS;
+                nextTierName = 'Sorcerer';
+                currentTier = 'Magic-in-Training';
+            } else if (userPoints < TIER_2_POINTS) {
+                nextTierPoints = TIER_2_POINTS;
+                nextTierName = 'Wizard';
+                currentTier = 'Sorcerer';
+            } else {
+                nextTierPoints = TIER_2_POINTS;
+                nextTierName = 'Wizard';
+                currentTier = 'Wizard';
+            }
+
+            const pointsNeeded = nextTierPoints - userPoints;
+            progressLabel.textContent = `You are a ${currentTier}. Earn ${pointsNeeded} more points to become a ${nextTierName}!`;
+            
+            const progress = (userPoints / nextTierPoints) * 100;
+            progressBarEl.style.width = `${Math.min(100, progress)}%`;
+            progressTextEl.textContent = `${userPoints} / ${nextTierPoints} points`;
+        }
+
+        // Event listeners
+        earnPointsBtn.addEventListener('click', () => {
+            userPoints += POINTS_PER_PURCHASE;
+            updateUI();
+            showMessage(`You earned ${POINTS_PER_PURCHASE} points!`);
+        });
+
+        redeemButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const cost = parseInt(button.dataset.cost, 10);
+                if (userPoints >= cost) {
+                    userPoints -= cost;
+                    updateUI();
+                    showMessage('Reward redeemed! Enjoy your treat!');
+                } else {
+                    showMessage('Not enough points to redeem that reward.');
+                }
+            });
+        });
+
+        // Initial UI update on page load
+        updateUI();
+
+    </script>
+</body>
+</html>
